@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Đếm Giờ Tính Tiền Online</title>
+  <style>
+    body { font-family: Arial; padding: 20px; }
+    #time { font-size: 36px; margin: 10px; }
+    #money { font-size: 24px; color: green; }
+    input, button { font-size: 18px; margin: 5px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { padding: 8px; border: 1px solid #ccc; }
+    th { background: #f0f0f0; }
+  </style>
+</head>
+<body>
+  <h1>🕒 Đếm Giờ Tính Tiền Online</h1>
+
+  <label>Đơn giá (đ/giờ): <input id="rateInput" type="number" value="10000"></label><br>
+  <div id="time">00:00:00</div>
+  <div id="money">Tổng tiền: 0 đ</div>
+
+  <button onclick="startTimer()">▶️ Bắt đầu</button>
+  <button onclick="stopTimer()">⏹ Dừng</button>
+  <button onclick="resetTimer()">🔄 Reset</button>
+  <button onclick="saveTransaction()">💾 Lưu hóa đơn</button>
+  <button onclick="printBill()">🖨 In hóa đơn hiện tại</button>
+  <button onclick="clearHistory()">🗑 Xóa lịch sử</button>
+
+  <h2>Lịch sử giao dịch</h2>
+  <table id="historyTable">
+    <tr>
+      <th>ID hóa đơn</th>
+      <th>Thời gian bắt đầu</th>
+      <th>Thời gian dùng</th>
+      <th>Tiền</th>
+      <th>In lần cuối</th>
+    </tr>
+  </table>
+
+  <script>
+    let startTime, timerInterval, elapsed=0;
+
+    function formatTime(ms) { /* ... như trước ... */ }
+    function calculateMoney(ms) {
+      const rate = parseFloat(document.getElementById("rateInput").value)||0;
+      return Math.round(ms/(1000*60*60)*rate);
+    }
+    function updateDisplay(ms){
+      document.getElementById("time").textContent = formatTime(ms);
+      document.getElementById("money").textContent = "Tổng tiền: " + calculateMoney(ms).toLocaleString() + " đ";
+    }
+    function startTimer(){ /* ... như trước ... */ }
+    function stopTimer(){ /* ... */ }
+    function resetTimer(){ /* ... */ }
+
+    function saveTransaction(){
+      if(!elapsed) return alert("Chưa có dữ liệu!");
+      const now = new Date().toLocaleString();
+      const duration = formatTime(elapsed);
+      const money = calculateMoney(elapsed);
+      const history = JSON.parse(localStorage.getItem("history")||"[]");
+      const id = history.length+1;
+      history.push({id, time: now, duration, money, lastPrinted: ""});
+      localStorage.setItem("history", JSON.stringify(history));
+      renderHistory();
+    }
+
+    function renderHistory(){
+      const history = JSON.parse(localStorage.getItem("history")||"[]");
+      const tbl = document.getElementById("historyTable");
+      tbl.innerHTML = `<tr>
+        <th>ID hóa đơn</th><th>Thời gian bắt đầu</th><th>Thời gian dùng</th><th>Tiền</th><th>In lần cuối</th>
+      </tr>`;
+      history.forEach(row => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${row.id}</td><td>${row.time}</td><td>${row.duration}</td>
+        <td>${row.money.toLocaleString()} đ</td><td>${row.lastPrinted||"-"}</td>`;
+        tbl.appendChild(tr);
+      });
+    }
+
+    function printBill(){
+      if(!elapsed) return alert("Chưa có dự liệu!");
+      const duration = formatTime(elapsed);
+      const money = calculateMoney(elapsed).toLocaleString();
+      const content = `HÓA ĐƠN #${Date.now()}\nThời gian: ${duration}\nTiền: ${money} đ`;
+      const w = window.open();
+      w.document.write(`<pre style="font-size:18px;">${content}</pre>`);
+      w.print(); w.close();
+
+      // Cập nhật lại thời gian in lần cuối cho hóa đơn vừa in
+      const history = JSON.parse(localStorage.getItem("history")||"[]");
+      if(history.length){
+        history[history.length-1].lastPrinted = new Date().toLocaleString();
+        localStorage.setItem("history", JSON.stringify(history));
+        renderHistory();
+      }
+    }
+
+    function clearHistory(){
+      if(confirm("Xóa toàn bộ lịch sử?")){
+        localStorage.removeItem("history");
+        renderHistory();
+      }
+    }
+
+    updateDisplay(0);
+    renderHistory();
+  </script>
+</body>
+</html>
